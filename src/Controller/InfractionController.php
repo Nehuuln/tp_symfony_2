@@ -6,6 +6,7 @@ use App\Entity\Ecurie;
 use App\Entity\Pilote;
 use App\Entity\Infraction;
 use Doctrine\ORM\EntityManagerInterface;
+use App\Service\InfractionService;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Attribute\Route;
@@ -15,7 +16,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 class InfractionController extends AbstractController
 {
 #[Route('/create', name: 'create_infraction', methods: ['POST'])]
-    public function createInfraction(Request $request, EntityManagerInterface $em): JsonResponse
+    public function createInfraction(Request $request, EntityManagerInterface $em, InfractionService $infractionService): JsonResponse
     {
         $data = json_decode($request->getContent(), true);
 
@@ -67,8 +68,10 @@ class InfractionController extends AbstractController
             $infraction->setEcurie($ecurie);
         }
 
-        $em->persist($infraction);
-        $em->flush();
+    $em->persist($infraction);
+    $em->flush();
+
+    $infractionService->handleInfraction($infraction);
 
         $result = [
             'id' => $infraction->getId(),
