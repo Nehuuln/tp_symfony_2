@@ -53,9 +53,15 @@ class PiloteFixtures extends Fixture implements DependentFixtureInterface
                 $pilote->setPrenom($p['prenom']);
                 $pilote->setLicencePoints(12);
                 
-                // Les deux premiers pilotes (index 0 et 1) sont titulaires, le dernier est réserviste
                 $pilote->setIsTitulaire($i < 2);
-                $pilote->setStartedAt(new \DateTime()); 
+
+                $min = strtotime('2004-01-01');
+                $max = strtotime('2023-12-31');
+                $randTs = mt_rand($min, $max);
+                $dt = new \DateTime();
+                $dt->setTimestamp($randTs);
+                $pilote->setStartedAt($dt);
+
                 $pilote->setEcurie($ecurie);
 
                 $manager->persist($pilote);
