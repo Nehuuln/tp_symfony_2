@@ -57,9 +57,9 @@ class PiloteFixtures extends Fixture implements DependentFixtureInterface
 
                 $min = strtotime('2004-01-01');
                 $max = strtotime('2023-12-31');
-                $randTs = mt_rand($min, $max);
+                $betweenDate = mt_rand($min, $max);
                 $dt = new \DateTime();
-                $dt->setTimestamp($randTs);
+                $dt->setTimestamp($betweenDate);
                 $pilote->setStartedAt($dt);
 
                 $pilote->setEcurie($ecurie);

@@ -82,4 +82,77 @@ class InfractionController extends AbstractController
 
         return new JsonResponse(['message' => 'Infraction créée', 'infraction' => $result], JsonResponse::HTTP_CREATED);
     }
+
+    #[Route('/list', name: 'list_infractions', methods: ['GET'])]
+    public function listInfractions(Request $request, EntityManagerInterface $em): JsonResponse
+    {
+        $ecurieId = $request->query->get('ecurieId');
+        $piloteId = $request->query->get('piloteId');
+        $date = $request->query->get('date');
+        $dateFrom = $request->query->get('dateFrom');
+        $dateTo = $request->query->get('dateTo');
+
+        try {
+            $qb = $em->getRepository(Infraction::class)->createQueryBuilder('i');
+
+            if ($ecurieId) {
+                $qb->andWhere('i.ecurie = :ecurieId')->setParameter('ecurieId', (int)$ecurieId);
+            }
+
+            if ($piloteId) {
+                $qb->andWhere('i.driver = :piloteId OR i.driver = :piloteId')->setParameter('piloteId', (int)$piloteId);
+            }
+
+            if ($date) {
+                $d = new \DateTime($date);
+                $start = (clone $d)->setTime(0, 0, 0);
+                $end = (clone $d)->setTime(23, 59, 59);
+                $qb->andWhere('i.occuredAt BETWEEN :start AND :end')
+                   ->setParameter('start', $start)
+                   ->setParameter('end', $end);
+            } else {
+                if ($dateFrom) {
+                    $df = new \DateTime($dateFrom);
+                    $qb->andWhere('i.occuredAt >= :from')->setParameter('from', $df->setTime(0,0,0));
+                }
+                if ($dateTo) {
+                    $dt = new \DateTime($dateTo);
+                    $qb->andWhere('i.occuredAt <= :to')->setParameter('to', $dt->setTime(23,59,59));
+                }
+            }
+
+            $qb->orderBy('i.occuredAt', 'DESC');
+
+            $infractions = $qb->getQuery()->getResult();
+
+            if (empty($infractions) && ($ecurieId || $piloteId)) {
+                if ($ecurieId && $piloteId) {
+                    return new JsonResponse(['error' => "Aucune infraction trouvée pour l\'écurie id {$ecurieId} et le pilote id {$piloteId}"], JsonResponse::HTTP_NOT_FOUND);
+                }
+                if ($ecurieId) {
+                    return new JsonResponse(['error' => "Aucune infraction trouvée pour l\'écurie id {$ecurieId}"], JsonResponse::HTTP_NOT_FOUND);
+                }
+                if ($piloteId) {
+                    return new JsonResponse(['error' => "Aucune infraction trouvée pour le pilote id {$piloteId}"], JsonResponse::HTTP_NOT_FOUND);
+                }
+            }
+
+            $result = [];
+            foreach ($infractions as $infraction) {
+                $result[] = [
+                    'id' => $infraction->getId(),
+                    'raceName' => $infraction->getRaceName(),
+                    'occuredAt' => $infraction->getOccuredAt() ? $infraction->getOccuredAt()->format(\DateTime::ATOM) : null,
+                    'description' => $infraction->getDescription(),
+                    'pointsPenalty' => $infraction->getPointsPenalty(),
+                    'piloteId' => $infraction->getPilote() ? $infraction->getPilote()->getId() : null,
+                    'ecurieId' => $infraction->getEcurie() ? $infraction->getEcurie()->getId() : null,
+                ];
+            }
+
+            return new JsonResponse(['infractions' => $result], JsonResponse::HTTP_OK);
+        } catch (\Exception $e) {
+            return new JsonResponse(['error' => 'Erreur serveur: ' . $e->getMessage()], JsonResponse::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
 }
