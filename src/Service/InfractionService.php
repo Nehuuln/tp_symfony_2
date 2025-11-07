@@ -29,7 +29,6 @@ class InfractionService
         $penalty = $infraction->getPointsPenalty() ?? 0;
 
         $newPoints = $currentPoints - $penalty;
-        // Ne pas passer en dessous de 0
         if ($newPoints < 0) {
             $newPoints = 0;
         }
