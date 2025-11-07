@@ -1,0 +1,18 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Tous les produits - My Shop{% endblock %}
+
+{% block body %}
+    <h1>Liste des produits</h1>
+    <ul>
+        {% for product in products %}
+            <li>
+                <strong>{{ product.name }}</strong><br>
+                {{ product.description }}<br>
+                Prix : {{ product.uniPrice | number_format(2, '.', ',') }} EUR
+            </li>
+        {% else %}
+            <li>Aucun produit trouvé.</li>
+        {% endfor %}
+    </ul>
+{% endblock %}
